@@ -36,7 +36,7 @@ class Distribution(metaclass=abc.ABCMeta):
 
 
 class ExponentialDistribution(Distribution):
-    def __init__(self, rate):
+    def __init__(self, rate=1):
         self.rate = rate
         self.observation_mean = 1/rate
         self.observations = 0
