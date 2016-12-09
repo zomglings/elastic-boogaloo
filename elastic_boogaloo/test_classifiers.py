@@ -1,7 +1,7 @@
 import unittest
 import unittest.mock as mock
 
-from classifiers import *
+from .classifiers import *
 
 
 def fake_distribution(density_value=1.0):

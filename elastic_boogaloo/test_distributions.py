@@ -1,6 +1,6 @@
 import unittest
 
-from distributions import *
+from .distributions import *
 
 
 class ExponentialDistributionTest(unittest.TestCase):
