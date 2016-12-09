@@ -1,4 +1,4 @@
-class UnopinionatedElasticClassifier:
+class UnopinionatedBinaryClassifier:
     """
     Classifies data using the search score produced by a query against an ElasticSearch index.
 
@@ -10,16 +10,17 @@ class UnopinionatedElasticClassifier:
     Uses a simple likelihood-based calculation to produce a classification score.
     """
 
-    def __init__(self, es_query_client, positive_score_distribution, negative_score_distribution):
+    def __init__(self, scorer, positive_score_distribution, negative_score_distribution):
         """
-        :param es_host: The ElasticSearch host URL
-        :param es_index: The index against which to perform search in order to obtain the classification score
+        :param scorer: An object with a score method, which accepts observations and assigns scores to them which are
+        consistent with the values produced by sampling from the positive_score_distribution and
+        negative_score_distribution
         :param positive_score_distribution: The distribution to be used to explain the likelihood of ElasticSearch
         scores given the positive case, assumed to be of type distributions.Distribution
         :param negative_score_distribution: The distribution to be used to explain the likelihood of ElasticSearch
         scores given the negative case, assumed to be of type distributions.Distribution
         """
-        self.es_query_client = es_query_client
+        self.scorer = scorer
         self.positive_score_distribution = positive_score_distribution
         self.negative_score_distribution = negative_score_distribution
 
@@ -30,39 +31,39 @@ class UnopinionatedElasticClassifier:
         :param value: An observation
         :return: The probability that the given observation belongs to the positive class
         """
-        es_score = self.calculate_es_score(observation)
+        score = self.compute_score(observation)
 
-        positive_score_density = self.positive_score_distribution.density(es_score)
-        negative_score_density = self.negative_score_distribution.density(es_score)
+        positive_score_density = self.positive_score_distribution.density(score)
+        negative_score_density = self.negative_score_distribution.density(score)
 
         positive_probability = positive_score_density/(positive_score_density + negative_score_density)
 
         return positive_probability
 
-    def train_positive(self, observation, confidence):
+    def train_positive(self, observation, confidence=1.0):
         """
         Trains the classifier with an observation from the positive class
         :param observation: An observation that is suspected to be positive
         :param confidence: The probability with which the given observation is known to be positive
         :return: None
         """
-        es_score = self.calculate_es_score(observation)
-        self.positive_score_distribution.register(es_score, confidence)
+        score = self.compute_score(observation)
+        self.positive_score_distribution.register(score, confidence)
 
-    def train_negative(self, observation, confidence):
+    def train_negative(self, observation, confidence=1.0):
         """
         Trains the classifier with an observation from the negative class
         :param observation: An observation that is suspected to be negative
         :param confidence: The probability with which the given observation is known to be negative
         :return: None
         """
-        es_score = self.calculate_es_score(observation)
-        self.negative_score_distribution.register(es_score, confidence)
+        score = self.compute_score(observation)
+        self.negative_score_distribution.register(score, confidence)
 
-    def calculate_es_score(self, observation):
-        hits = self.es_query_client.search(observation)
-        top_score = 0
-        if len(hits) > 0:
-            top_score = hits[0]['score']
-
-        return top_score
+    def compute_score(self, observation):
+        """
+        Scores the given observation against the classifier's scorer.
+        :param observation: An observation we wish to score
+        :return: The value the scorer assigns to the input observation
+        """
+        return self.scorer.score(observation)
