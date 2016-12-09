@@ -5,9 +5,6 @@ class ElasticsearchIndexTopScorer:
     """
     def __init__(self, es_client, index):
         """
-        NOTE: To create an Elasticsearch client:
-        >>> from elasticsearch import Elasticsearch
-        >>> es_client = Elasticsearch(hosts='localhost:9200')
         :param es_client: Elasticsearch server against which to make queries
         :param index: An index against which to make search queries
         """
